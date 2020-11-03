@@ -1,0 +1,63 @@
+groups:
+- name: MySQLStatsAlert
+  rules:
+  - alert: MySQL is down
+    expr: mysql_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} MySQL is down"
+      description: "MySQL database is down. This requires immediate action!"
+  - alert: open files high
+    expr: mysql_global_status_innodb_num_open_files > (mysql_global_variables_open_files_limit) * 0.75
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} open files high"
+      description: "Open files is high. Please consider increasing open_files_limit."
+
+  #- alert: Table open cache too small
+    #expr: mysql_global_status_open_tables > mysql_global_variables_table_open_cache * 99/100
+    #for: 10m
+    #labels:
+      #severity: page
+    #annotations:
+      #summary: "Instance {{ $labels.instance }} Table open cache too small"
+      #description: "Your Table Open Cache is possibly too small (old name Table Cache). If it is much too small this can have significant performance impacts!"
+
+  - alert: IO thread stopped
+    expr: mysql_slave_status_slave_io_running != 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} IO thread stopped"
+      description: "IO thread has stopped. This is usually because it cannot connect to the Master any more."
+  - alert: SQL thread stopped
+    expr: mysql_slave_status_slave_sql_running != 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} Sync Binlog is enabled"
+      description: "SQL thread has stopped. This is usually because it cannot apply a SQL statement received from the master."
+      
+  - alert: Slave lagging behind Master
+    expr: rate(mysql_slave_status_seconds_behind_master[1m]) >30 
+    for: 1m
+    labels:
+      severity: warning 
+    annotations:
+      summary: "Instance {{ $labels.instance }} Slave lagging behind Master"
+      description: "Slave is lagging behind Master. Please check if Slave threads are running and if there are some performance issues!"
+  - alert: mysql threads_running exceed cpu cores
+    expr: mysql_global_status_threads_running > 32
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance {{ $labels.instance }} threads_running is high"
+      description: "mysql threads_running exceed cpu cores Please check mysql"
+
